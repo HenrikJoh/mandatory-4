@@ -1,0 +1,9 @@
+<div *ngIf="!authService.authenticated">
+  <!-- Complete this markup for showing error upon unsuccessful login. -->
+  <p class="error" *ngIf="triedToLogin && !authService.authenticated">Login credentials were incorrect!</p>
+  <form action="">
+    <input type="text" name="username" [(ngModel)]="userInput.username">
+    <input type="text" name="password" [(ngModel)]="userInput.password">
+    <button (click)="login()" [disabled]="!isValidForm()">Login</button>
+  </form>
+</div>

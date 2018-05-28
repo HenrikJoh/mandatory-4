@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import jwt_decode from 'jwt-decode';
-
+import * as jwt_decode from 'jwt-decode';
 
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
@@ -24,13 +23,18 @@ interface User {
 
 @Injectable()
 export class AuthService {
-
   // the decoded token if the user has been authenticated, carrying information about the user.
   _user: User;
+  token;
 
   // inject the HttpClient service.
   constructor(private http: HttpClient) {
     // perform any logic upon application startup here...
+    /*     const token = localStorage.getItem('user');
+        if (token) {
+          this._user = jwt_decode('token');
+          this.token = token;
+        } */
   }
 
   // ...
@@ -40,7 +44,7 @@ export class AuthService {
   }
 
   get authenticated() {
-    return this._user !== undefined;
+    return this._user !== undefined && this._user !== null;
   }
 
   // use this method to catch http errors.
@@ -58,12 +62,25 @@ export class AuthService {
     // catching http errors.
 
     // return ...
-    return this.http.post('/login', credentials);
 
+    const ob = this.http.post('/login', credentials);
+    ob.subscribe((resp: any) => {
+
+      const token = resp.token;
+      this.token = token;
+      const user = jwt_decode(token);
+      this._user = user;
+      localStorage.setItem('user', token);
+
+
+    }, (err) => console.error(err, 'err'));
+    return ob;
   }
 
   logout() {
     // logout the current user by removing the corresponding token.
+    this._user = null;
+    localStorage.clear();
   }
 
   getResource(resource): Observable<any> {
@@ -72,6 +89,12 @@ export class AuthService {
     // If e.g. invoking /api/friends, the 'resource' parameter should equal 'friends'.
 
     // return ...
-    return;
+    const options = {
+      headers: new HttpHeaders({
+        'Authorization': `Bearer ${this.token}`
+      })
+    };
+
+    return this.http.get<any>(resource, options);
   }
 }
